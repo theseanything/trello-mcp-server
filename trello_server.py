@@ -1,12 +1,12 @@
 import os
 import logging
-from typing import List
+from typing import List, Optional
 from collections.abc import AsyncIterator
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP, Context
 from trello_api import TrelloClient
 from trello_service import TrelloService
-from models import TrelloBoard, TrelloList, TrelloCard
+from models import TrelloBoard, TrelloList, TrelloCard, TrelloLabel
 
 # Configure logging
 logging.basicConfig(
@@ -190,6 +190,123 @@ async def delete_list(ctx: Context, list_id: str) -> TrelloList:
         raise
 
 
+# Label Tools
+@mcp.tool()
+async def get_labels(ctx: Context, board_id: str) -> List[TrelloLabel]:
+    """Retrieves all labels on a given board.
+
+    Args:
+        board_id (str): The ID of the board whose labels to retrieve.
+
+    Returns:
+        List[TrelloLabel]: A list of label objects.
+    """
+    try:
+        logger.info(f"Getting labels for board: {board_id}")
+        result = await service.get_labels(board_id)
+        logger.info(f"Successfully retrieved {len(result)} labels for board: {board_id}")
+        return result
+    except Exception as e:
+        error_msg = f"Failed to get labels: {str(e)}"
+        logger.error(error_msg)
+        ctx.error(error_msg)
+        raise
+
+
+@mcp.tool()
+async def get_label(ctx: Context, label_id: str) -> TrelloLabel:
+    """Retrieves a specific label by its ID.
+
+    Args:
+        label_id (str): The ID of the label to retrieve.
+
+    Returns:
+        TrelloLabel: The label object containing label details.
+    """
+    try:
+        logger.info(f"Getting label with ID: {label_id}")
+        result = await service.get_label(label_id)
+        logger.info(f"Successfully retrieved label: {label_id}")
+        return result
+    except Exception as e:
+        error_msg = f"Failed to get label: {str(e)}"
+        logger.error(error_msg)
+        ctx.error(error_msg)
+        raise
+
+
+@mcp.tool()
+async def create_label(
+    ctx: Context, board_id: str, name: str = None, color: str = None
+) -> TrelloLabel:
+    """Creates a new label on a given board.
+
+    Args:
+        board_id (str): The ID of the board to create the label in.
+        name (str, optional): The name of the new label. Defaults to None.
+        color (str, optional): The color of the new label. Defaults to None.
+
+    Returns:
+        TrelloLabel: The newly created label object.
+    """
+    try:
+        logger.info(f"Creating label in board: {board_id}")
+        result = await service.create_label(board_id, name, color)
+        logger.info(f"Successfully created label in board: {board_id}")
+        return result
+    except Exception as e:
+        error_msg = f"Failed to create label: {str(e)}"
+        logger.error(error_msg)
+        ctx.error(error_msg)
+        raise
+
+
+@mcp.tool()
+async def add_label_to_card(ctx: Context, card_id: str, label_id: str) -> dict:
+    """Adds a label to a card.
+
+    Args:
+        card_id (str): The ID of the card to add the label to.
+        label_id (str): The ID of the label to add.
+
+    Returns:
+        dict: The response from the add operation.
+    """
+    try:
+        logger.info(f"Adding label {label_id} to card: {card_id}")
+        result = await service.add_label_to_card(card_id, label_id)
+        logger.info(f"Successfully added label to card: {card_id}")
+        return result
+    except Exception as e:
+        error_msg = f"Failed to add label to card: {str(e)}"
+        logger.error(error_msg)
+        ctx.error(error_msg)
+        raise
+
+
+@mcp.tool()
+async def remove_label_from_card(ctx: Context, card_id: str, label_id: str) -> dict:
+    """Removes a label from a card.
+
+    Args:
+        card_id (str): The ID of the card to remove the label from.
+        label_id (str): The ID of the label to remove.
+
+    Returns:
+        dict: The response from the remove operation.
+    """
+    try:
+        logger.info(f"Removing label {label_id} from card: {card_id}")
+        result = await service.remove_label_from_card(card_id, label_id)
+        logger.info(f"Successfully removed label from card: {card_id}")
+        return result
+    except Exception as e:
+        error_msg = f"Failed to remove label from card: {str(e)}"
+        logger.error(error_msg)
+        ctx.error(error_msg)
+        raise
+
+
 # Card Tools
 @mcp.tool()
 async def get_card(ctx: Context, card_id: str) -> TrelloCard:
@@ -237,7 +354,7 @@ async def get_cards(ctx: Context, list_id: str) -> List[TrelloCard]:
 
 @mcp.tool()
 async def create_card(
-    ctx: Context, list_id: str, name: str, desc: str = None
+    ctx: Context, list_id: str, name: str, desc: str = None, label_ids: List[str] = None
 ) -> TrelloCard:
     """Creates a new card in a given list.
 
@@ -245,13 +362,14 @@ async def create_card(
         list_id (str): The ID of the list to create the card in.
         name (str): The name of the new card.
         desc (str, optional): The description of the new card. Defaults to None.
+        label_ids (List[str], optional): List of label IDs to add to the card. Defaults to None.
 
     Returns:
         TrelloCard: The newly created card object.
     """
     try:
         logger.info(f"Creating card in list {list_id} with name: {name}")
-        result = await service.create_card(list_id, name, desc)
+        result = await service.create_card(list_id, name, desc, label_ids)
         logger.info(f"Successfully created card in list: {list_id}")
         return result
     except Exception as e:
@@ -321,10 +439,16 @@ def trello_help() -> str:
        - Create a new list
        - Update a list's name
        - Archive a list
-    3. Card Operations:
+    3. Label Operations:
+       - Get all labels on a board
+       - Get a specific label
+       - Create a new label
+       - Add a label to a card
+       - Remove a label from a card
+    4. Card Operations:
        - Get a specific card
        - List all cards in a list
-       - Create a new card
+       - Create a new card (with optional labels)
        - Update a card's attributes
        - Delete a card
     """
