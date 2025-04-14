@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 
 
 class TrelloBoard(BaseModel):
@@ -23,6 +23,16 @@ class TrelloList(BaseModel):
     pos: float
 
 
+class TrelloLabel(BaseModel):
+    """Model representing a Trello label."""
+
+    id: str
+    idBoard: str
+    name: Optional[str] = None
+    color: Optional[str] = None
+    uses: Optional[int] = None
+
+
 class TrelloCard(BaseModel):
     """Model representing a Trello card."""
 
@@ -34,3 +44,4 @@ class TrelloCard(BaseModel):
     idBoard: str
     url: str
     pos: float
+    labels: Optional[List[TrelloLabel]] = None
