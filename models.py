@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Any
 
 
 class TrelloBoard(BaseModel):
@@ -45,3 +45,18 @@ class TrelloCard(BaseModel):
     url: str
     pos: float
     labels: Optional[List[TrelloLabel]] = None
+
+
+class TrelloAttachment(BaseModel):
+    """Model representing a Trello attachment."""
+    id: str
+    name: Optional[str] = None
+    bytes: Optional[str] = None
+    date: Optional[str] = None
+    edgeColor: Optional[str] = None
+    idMember: Optional[str] = None
+    isUpload: bool = False
+    mimeType: Optional[str] = None
+    url: Optional[str] = None
+    pos: Optional[float] = None
+    previews: Optional[List[Any]] = None

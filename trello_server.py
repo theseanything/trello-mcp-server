@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP, Context
 from trello_api import TrelloClient
 from trello_service import TrelloService
-from models import TrelloBoard, TrelloList, TrelloCard, TrelloLabel
+from models import TrelloBoard, TrelloList, TrelloCard, TrelloLabel, TrelloAttachment
 
 # Configure logging
 logging.basicConfig(
@@ -419,6 +419,108 @@ async def delete_card(ctx: Context, card_id: str) -> dict:
         return result
     except Exception as e:
         error_msg = f"Failed to delete card: {str(e)}"
+        logger.error(error_msg)
+        ctx.error(error_msg)
+        raise
+
+
+# Add these tool functions after the card tools
+
+@mcp.tool()
+async def get_card_attachments(ctx: Context, card_id: str) -> List[TrelloAttachment]:
+    """Retrieves all attachments on a card.
+
+    Args:
+        card_id (str): The ID of the card whose attachments to retrieve.
+
+    Returns:
+        List[TrelloAttachment]: A list of attachment objects.
+    """
+    try:
+        logger.info(f"Getting attachments for card: {card_id}")
+        result = await service.get_card_attachments(card_id)
+        logger.info(f"Successfully retrieved {len(result)} attachments for card: {card_id}")
+        return result
+    except Exception as e:
+        error_msg = f"Failed to get attachments: {str(e)}"
+        logger.error(error_msg)
+        ctx.error(error_msg)
+        raise
+
+@mcp.tool()
+async def get_attachment(ctx: Context, card_id: str, attachment_id: str) -> TrelloAttachment:
+    """Retrieves a specific attachment on a card.
+
+    Args:
+        card_id (str): The ID of the card containing the attachment.
+        attachment_id (str): The ID of the attachment to retrieve.
+
+    Returns:
+        TrelloAttachment: The attachment object.
+    """
+    try:
+        logger.info(f"Getting attachment {attachment_id} from card: {card_id}")
+        result = await service.get_attachment(card_id, attachment_id)
+        logger.info(f"Successfully retrieved attachment: {attachment_id}")
+        return result
+    except Exception as e:
+        error_msg = f"Failed to get attachment: {str(e)}"
+        logger.error(error_msg)
+        ctx.error(error_msg)
+        raise
+
+@mcp.tool()
+async def create_attachment(
+    ctx: Context,
+    card_id: str,
+    url: str = None,
+    name: str = None,
+    mime_type: str = None,
+    set_cover: bool = False
+) -> TrelloAttachment:
+    """Creates a new attachment on a card.
+
+    Args:
+        card_id (str): The ID of the card to attach to.
+        url (str, optional): The URL of the attachment. Required if file not provided.
+        name (str, optional): The name of the attachment.
+        mime_type (str, optional): The MIME type of the attachment.
+        set_cover (bool, optional): Whether to set this attachment as the card cover.
+
+    Returns:
+        TrelloAttachment: The created attachment object.
+    """
+    try:
+        logger.info(f"Creating attachment on card: {card_id}")
+        result = await service.create_attachment(
+            card_id, url, name, mime_type, set_cover
+        )
+        logger.info(f"Successfully created attachment on card: {card_id}")
+        return result
+    except Exception as e:
+        error_msg = f"Failed to create attachment: {str(e)}"
+        logger.error(error_msg)
+        ctx.error(error_msg)
+        raise
+
+@mcp.tool()
+async def delete_attachment(ctx: Context, card_id: str, attachment_id: str) -> dict:
+    """Deletes an attachment from a card.
+
+    Args:
+        card_id (str): The ID of the card containing the attachment.
+        attachment_id (str): The ID of the attachment to delete.
+
+    Returns:
+        dict: The response from the delete operation.
+    """
+    try:
+        logger.info(f"Deleting attachment {attachment_id} from card: {card_id}")
+        result = await service.delete_attachment(card_id, attachment_id)
+        logger.info(f"Successfully deleted attachment: {attachment_id}")
+        return result
+    except Exception as e:
+        error_msg = f"Failed to delete attachment: {str(e)}"
         logger.error(error_msg)
         ctx.error(error_msg)
         raise

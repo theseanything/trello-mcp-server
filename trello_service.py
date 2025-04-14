@@ -2,7 +2,7 @@
 from trello_api import TrelloClient
 
 from typing import Dict, List, Any, Optional
-from models import TrelloBoard, TrelloList, TrelloCard, TrelloLabel
+from models import TrelloBoard, TrelloList, TrelloCard, TrelloLabel, TrelloAttachment
 
 TRELLO_API_BASE = "https://api.trello.com/1"
 
@@ -250,3 +250,73 @@ class TrelloService:
             Dict[str, Any]: The response from the delete operation.
         """
         return await self.client._delete(f"/cards/{card_id}")
+
+    async def get_card_attachments(self, card_id: str) -> List[TrelloAttachment]:
+        """Retrieves all attachments on a card.
+
+        Args:
+            card_id (str): The ID of the card whose attachments to retrieve.
+
+        Returns:
+            List[TrelloAttachment]: A list of attachment objects.
+        """
+        response = await self.client._get(f"/cards/{card_id}/attachments")
+        return [TrelloAttachment(**attachment) for attachment in response]
+
+    async def get_attachment(self, card_id: str, attachment_id: str) -> TrelloAttachment:
+        """Retrieves a specific attachment on a card.
+
+        Args:
+            card_id (str): The ID of the card containing the attachment.
+            attachment_id (str): The ID of the attachment to retrieve.
+
+        Returns:
+            TrelloAttachment: The attachment object.
+        """
+        response = await self.client._get(f"/cards/{card_id}/attachments/{attachment_id}")
+        return TrelloAttachment(**response)
+
+    async def create_attachment(
+        self, 
+        card_id: str, 
+        url: str = None, 
+        name: str = None, 
+        mime_type: str = None,
+        set_cover: bool = False
+    ) -> TrelloAttachment:
+        """Creates a new attachment on a card.
+
+        Args:
+            card_id (str): The ID of the card to attach to.
+            url (str, optional): The URL of the attachment. Required if file not provided.
+            name (str, optional): The name of the attachment.
+            mime_type (str, optional): The MIME type of the attachment.
+            set_cover (bool, optional): Whether to set this attachment as the card cover.
+
+        Returns:
+            TrelloAttachment: The created attachment object.
+        """
+        data = {}
+        if url:
+            data["url"] = url
+        if name:
+            data["name"] = name 
+        if mime_type:
+            data["mimeType"] = mime_type
+        if set_cover:
+            data["setCover"] = "true"
+
+        response = await self.client._post(f"/cards/{card_id}/attachments", data=data)
+        return TrelloAttachment(**response)
+
+    async def delete_attachment(self, card_id: str, attachment_id: str) -> dict:
+        """Deletes an attachment from a card.
+
+        Args:
+            card_id (str): The ID of the card containing the attachment.
+            attachment_id (str): The ID of the attachment to delete.
+
+        Returns:
+            dict: The response from the delete operation.
+        """
+        return await self.client._delete(f"/cards/{card_id}/attachments/{attachment_id}")
