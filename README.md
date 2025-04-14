@@ -1,8 +1,9 @@
 # Trello MCP Server
 
-A powerful MCP server for interacting with Trello boards, lists, and cards via AI Hosts.
+A powerful MCP server for interacting with Trello boards, lists, cards, and attachments via AI Hosts.
 
 ## Table of Contents
+
 - [Table of Contents](#table-of-contents)
 - [Prerequisites](#prerequisites)
 - [Pre-installation](#pre-installation)
@@ -12,13 +13,13 @@ A powerful MCP server for interacting with Trello boards, lists, and cards via A
 - [Client Integration](#client-integration)
 - [Capabilities](#capabilities)
 - [Detailed Capabilities](#detailed-capabilities)
-    - [Board Operations](#board-operations)
-    - [List Operations](#list-operations)
-    - [Card Operations](#card-operations)
+  - [Board Operations](#board-operations)
+  - [List Operations](#list-operations)
+  - [Card Operations](#card-operations)
+  - [Attachment Operations](#attachment-operations)
 - [Usage](#usage)
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
-
 
 ## Prerequisites
 
@@ -28,39 +29,43 @@ A powerful MCP server for interacting with Trello boards, lists, and cards via A
 4. [uv](https://github.com/astral-sh/uv) package manager installed
 
 ## Pre-installation
+
 1. Make sure you have installed Claude Desktop App
 2. Make sure you have already logged in with your account into Claude.
 3. Start Claude
 
 ## Installation
 
-
-
 1. Set up Trello API credentials:
+
    - Go to [Trello Apps Administration](https://trello.com/power-ups/admin)
    - Create a new integration at [New Power-Up or Integration](https://trello.com/power-ups/admin/new)
    - Fill in your information (you can leave the Iframe connector URL empty) and make sure to select the correct Workspace
-   - Click your app's icon and navigate to "API key" from left sidebar. 
+   - Click your app's icon and navigate to "API key" from left sidebar.
    - Copy your "API key" and on the right side: "you can manually generate a Token." click the word token to get your Trello Token.
 
 2. Rename the `.env.example` file in the project root with `.env` and set vairables you just got:
+
 ```bash
 TRELLO_API_KEY=your_api_key_here
 TRELLO_TOKEN=your_token_here
 ```
 
 3. Install uv if you haven't already:
+
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
 4. Clone this repository:
+
 ```bash
 git clone https://github.com/m0xai/trello-mcp-server.git
 cd trello-mcp-server
 ```
 
 5. Install dependencies and set server for Claude using uv::
+
 ```bash
 uv run mcp install main.py
 ```
@@ -77,9 +82,11 @@ This mode integrates directly with the Claude Desktop application:
 
 1. Set `USE_CLAUDE_APP=true` in your `.env` file (this is the default)
 2. Run the server with:
+
 ```bash
 uv run mcp install main.py
 ```
+
 3. Restart the Claude Desktop application
 
 ### SSE Server Mode
@@ -88,9 +95,11 @@ This mode runs as a standalone SSE server that can be used with any MCP-compatib
 
 1. Set `USE_CLAUDE_APP=false` in your `.env` file
 2. Run the server with:
+
 ```bash
 python main.py
 ```
+
 3. The server will be available at `http://localhost:8000` by default (or your configured port)
 
 ### Docker Mode
@@ -100,15 +109,20 @@ You can also run the server using Docker Compose:
 1. Make sure you have Docker and Docker Compose installed
 2. Create your `.env` file with your configuration
 3. Build and start the container:
+
 ```bash
 docker-compose up -d
 ```
+
 4. The server will run in SSE mode by default
 5. To view logs:
+
 ```bash
 docker-compose logs -f
 ```
+
 6. To stop the server:
+
 ```bash
 docker-compose down
 ```
@@ -117,14 +131,14 @@ docker-compose down
 
 The server can be configured using environment variables in the `.env` file:
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| TRELLO_API_KEY | Your Trello API key | Required |
-| TRELLO_TOKEN | Your Trello API token | Required |
-| MCP_SERVER_NAME | The name of the MCP server | Trello MCP Server |
-| MCP_SERVER_HOST | Host address for SSE mode | 0.0.0.0 |
-| MCP_SERVER_PORT | Port for SSE mode | 8000 |
-| USE_CLAUDE_APP | Whether to use Claude app mode | true |
+| Variable        | Description                    | Default           |
+| --------------- | ------------------------------ | ----------------- |
+| TRELLO_API_KEY  | Your Trello API key            | Required          |
+| TRELLO_TOKEN    | Your Trello API token          | Required          |
+| MCP_SERVER_NAME | The name of the MCP server     | Trello MCP Server |
+| MCP_SERVER_HOST | Host address for SSE mode      | 0.0.0.0           |
+| MCP_SERVER_PORT | Port for SSE mode              | 8000              |
+| USE_CLAUDE_APP  | Whether to use Claude app mode | true              |
 
 You can customize the server by editing these values in your `.env` file.
 
@@ -172,7 +186,7 @@ import httpx
 async def connect_to_mcp_server():
     url = "http://localhost:8000/sse"
     headers = {"Accept": "text/event-stream"}
-    
+
     async with httpx.AsyncClient() as client:
         async with client.stream("GET", url, headers=headers) as response:
             # Get the session ID from the first SSE message
@@ -182,7 +196,7 @@ async def connect_to_mcp_server():
                     data = line[5:].strip()
                     if "session_id=" in data and not session_id:
                         session_id = data.split("session_id=")[1]
-                        
+
                         # Send a message using the session ID
                         message_url = f"http://localhost:8000/messages/?session_id={session_id}"
                         message = {
@@ -200,20 +214,22 @@ if __name__ == "__main__":
 
 ## Capabilities
 
-| Operation | Board | List | Card |
-|-----------|-------|------|------|
-| Read      | ✅    | ✅    | ✅   |
-| Write     | ❌    | ✅    | ✅   |
-| Update    | ❌    | ✅    | ✅   |
-| Delete    | ❌    | ✅    | ✅   |
+| Operation | Board | List | Card | Attachment |
+| --------- | ----- | ---- | ---- | ---------- |
+| Read      | ✅    | ✅   | ✅   | ✅         |
+| Write     | ❌    | ✅   | ✅   | ✅         |
+| Update    | ❌    | ✅   | ✅   | ❌         |
+| Delete    | ❌    | ✅   | ✅   | ✅         |
 
 ### Detailed Capabilities
 
 #### Board Operations
+
 - ✅ Read all boards
 - ✅ Read specific board details
 
 #### List Operations
+
 - ✅ Read all lists in a board
 - ✅ Read specific list details
 - ✅ Create new lists
@@ -221,11 +237,19 @@ if __name__ == "__main__":
 - ✅ Archive (delete) lists
 
 #### Card Operations
+
 - ✅ Read all cards in a list
 - ✅ Read specific card details
 - ✅ Create new cards
 - ✅ Update card attributes
 - ✅ Delete cards
+
+#### Attachment Operations
+
+- ✅ Read all attachments on a card
+- ✅ Read specific attachment details
+- ✅ Create new attachments (URL-based)
+- ✅ Delete attachments
 
 ## Usage
 
@@ -236,11 +260,13 @@ Once installed, you can interact with your Trello boards through Claude. Here ar
 - "Create a new card in list [list_name] with title [title]"
 - "Update the description of card [card_name]"
 - "Archive the list [list_name]"
+- "Show me all attachments on card [card_name]"
+- "Add an attachment with URL [url] to card [card_name]"
+- "Delete attachment [attachment_name] from card [card_name]"
 
 Here are my example usages:
 <img width="1277" alt="Example Usage of Trello MCP server: Asking to list all my cards in Guitar Board" src="https://github.com/user-attachments/assets/fef29dfc-04b2-4af9-92a6-f8db2320c860" />
 <img width="1274" alt="Asking to add new song card into my project songs" src="https://github.com/user-attachments/assets/2d8406ca-1dde-41c0-a035-86d5271dd78f" />
-
 
 ## Troubleshooting
 
